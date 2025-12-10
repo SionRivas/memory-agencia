@@ -1,0 +1,32 @@
+.grid-masonry {
+  /* El contenedor debe tener ancho */
+  width: 100%;
+}
+
+.grid-masonry-item {
+  width: calc(25% - 10px);
+
+  /* Estilos visuales opcionales */
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: bold;
+  font-family: sans-serif;
+  margin-bottom: 10px;
+}
+
+.hero-video {
+  position: absolute;
+  top: 0;
+  left: 25%;
+  z-index: 10;
+  width: calc(50% - 10px);
+  margin: 0px 0px 0px 0px;
+}
+.decoracion {
+  position: absolute;
+  height: 75px;
+  width: 100%;
+}

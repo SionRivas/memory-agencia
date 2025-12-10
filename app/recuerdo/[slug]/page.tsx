@@ -1,9 +1,10 @@
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import { Metadata } from "next";
-import { MemorialHeader } from "@/components/memorial-header";
+import { MemorialHeader } from "@/components/MasonryGallery/memorial-header";
 import { HeroVideoDialog } from "@/components/ui/hero-video-dialog";
-import { Masonry } from "@/components/masonry";
+import { MasonryGallery } from "@/components/MasonryGallery";
+import { MemorialFooter } from "@/components/MasonryGallery/memorial-footer";
 
 interface MemorialPageProps {
   params: Promise<{ slug: string }>;
@@ -53,7 +54,8 @@ export default async function MemorialPage({ params }: MemorialPageProps) {
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-12 lg:py-16">
         <MemorialHeader title={title} description={description || ""} />
 
-        <Masonry memorial={memorial} />
+        <MasonryGallery memorial={memorial} />
+        <MemorialFooter />
       </div>
     </main>
   );
