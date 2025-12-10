@@ -1,10 +1,11 @@
+import { prisma } from "@/lib/prisma";
+
 // /app/api/route.ts
 export async function GET() {
-  // Accede a la variable de entorno en el servidor
-  const awsKey = process.env.AWS_REGION ?? "NO_DEFINIDA";
+  const test = await prisma.memorial.findFirst();
 
-  return new Response(awsKey, {
+  return new Response(test ? JSON.stringify(test) : "No data found", {
     status: 200,
-    headers: { "Content-Type": "text/plain; charset=utf-8" },
+    headers: { "Content-Type": "application/json; charset=utf-8" },
   });
 }

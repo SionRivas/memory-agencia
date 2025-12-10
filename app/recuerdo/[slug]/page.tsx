@@ -1,30 +1,60 @@
-export default async function RecuerdoPage({
-  params,
-}: {
-  params: { slug: string };
-}) {
-  const slug = params.slug;
-  const recuerdo = await obtenerRecuerdoPorSlug(slug);
+import { prisma } from "@/lib/prisma";
+import { notFound } from "next/navigation";
+import { Metadata } from "next";
+import { MemorialHeader } from "@/components/memorial-header";
+import { HeroVideoDialog } from "@/components/ui/hero-video-dialog";
+import { Masonry } from "@/components/masonry";
 
-  if (!recuerdo) {
-    return <h1>Recuerdo no encontrado</h1>;
-  }
-
-  return (
-    <div>
-      <h1>{recuerdo.titulo}</h1>
-      <p>{recuerdo.contenido}</p>
-    </div>
-  );
+interface MemorialPageProps {
+  params: Promise<{ slug: string }>;
 }
 
-async function obtenerRecuerdoPorSlug(slug: string) {
-  if (slug === "mi-primer-viaje") {
-    return {
-      titulo: "Mi Primer Viaje a la Playa",
-      contenido: "El agua estaba fría pero el sol radiante.",
-      id_secreto_db: "XYZ123", // Esto NO se envía al cliente
-    };
-  }
-  return null;
+// 1. GENERAR METADATA DINÁMICA (Para WhatsApp/Facebook)
+export async function generateMetadata({
+  params,
+}: MemorialPageProps): Promise<Metadata> {
+  const { slug } = await params;
+  const memorial = await prisma.memorial.findUnique({
+    where: { slug },
+    include: { gallery: { take: 1 } }, // Solo traemos 1 foto para la previa
+  });
+
+  if (!memorial) return { title: "Recuerdo no encontrado" };
+
+  // Usamos la primera foto de la galería como portada, o una por defecto
+  const ogImage =
+    memorial.gallery[0]?.url || "https://tudominio.com/default-flower.jpg";
+
+  return {
+    title: `En Memoria de ${memorial.title}`,
+    description: memorial.description || "Un tributo a una vida especial.",
+    openGraph: {
+      images: [ogImage],
+    },
+  };
+}
+
+// 2. COMPONENTE DE PÁGINA
+export default async function MemorialPage({ params }: MemorialPageProps) {
+  const { slug } = await params;
+  const memorial = await prisma.memorial.findUnique({
+    where: { slug },
+    include: {
+      gallery: { orderBy: { createdAt: "asc" } },
+    },
+  });
+
+  if (!memorial) notFound();
+
+  const { title, description, youtubeVideoId, gallery } = memorial;
+
+  return (
+    <main className="min-h-screen bg-background">
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-12 lg:py-16">
+        <MemorialHeader title={title} description={description || ""} />
+
+        <Masonry memorial={memorial} />
+      </div>
+    </main>
+  );
 }

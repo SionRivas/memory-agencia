@@ -1,0 +1,34 @@
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client"
+  previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Memorial {
+  id             String    @id // En SQL es TEXT PRIMARY KEY
+  slug           String    @unique
+  title          String
+  description    String?
+  youtubeVideoId String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @default(now()) @updatedAt
+  
+  // Relación inversa (Prisma la necesita para navegar)
+  gallery        MemorialImage[]
+}
+
+model MemorialImage {
+  id         String   @id
+  url        String
+  caption    String?
+  memorialId String
+  createdAt  DateTime @default(now())
+  
+  // Definición de la llave foránea
+  memorial   Memorial @relation(fields: [memorialId], references: [id], onDelete: Cascade)
+}
