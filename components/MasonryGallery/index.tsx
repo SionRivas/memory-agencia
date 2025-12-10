@@ -4,6 +4,7 @@ import "./MasonryGrid.css";
 import { HeroVideoDialog } from "@/components/ui/hero-video-dialog";
 import { useEffect, useRef, useState } from "react";
 import { MasonryImage } from "./MasonryImage";
+import { Lightbox } from "./Lightbox";
 
 interface GalleryImage {
   id: string;
@@ -36,6 +37,10 @@ export const MasonryGallery: React.FC<MasonryProps> = ({ memorial }) => {
   const masonryInstance = useRef<any>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Lightbox state
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
+
   useEffect(() => {
     const initMasonry = async () => {
       if (!gridRef.current) return;
@@ -66,6 +71,26 @@ export const MasonryGallery: React.FC<MasonryProps> = ({ memorial }) => {
     };
   }, [memorial.gallery]);
 
+  const handleImageClick = (index: number) => {
+    setLightboxIndex(index);
+    setLightboxOpen(true);
+  };
+
+  const handleLightboxClose = () => {
+    setLightboxOpen(false);
+  };
+
+  const handleLightboxNavigate = (index: number) => {
+    setLightboxIndex(index);
+  };
+
+  // Prepare images for lightbox (simpler structure)
+  const lightboxImages = memorial.gallery?.map((img) => ({
+    id: img.id,
+    url: img.url,
+    caption: img.caption,
+  })) || [];
+
   return (
     <>
       <div className="masonry-container mt-10">
@@ -92,11 +117,21 @@ export const MasonryGallery: React.FC<MasonryProps> = ({ memorial }) => {
                 alt={image.caption || "Memorial Image"}
                 index={index}
                 isReady={!isLoading}
+                onClick={() => handleImageClick(index)}
               />
             ))}
           </div>
         )}
       </div>
+
+      {/* Lightbox */}
+      <Lightbox
+        images={lightboxImages}
+        currentIndex={lightboxIndex}
+        isOpen={lightboxOpen}
+        onClose={handleLightboxClose}
+        onNavigate={handleLightboxNavigate}
+      />
     </>
   );
 };
