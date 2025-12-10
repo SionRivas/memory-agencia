@@ -2,8 +2,8 @@
 
 import "./MasonryGrid.css";
 import { HeroVideoDialog } from "@/components/ui/hero-video-dialog";
-import Masonry from "masonry-layout";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { MasonryImage } from "./MasonryImage";
 
 interface GalleryImage {
   id: string;
@@ -29,42 +29,54 @@ interface MasonryProps {
 }
 
 export const MasonryGallery: React.FC<MasonryProps> = ({ memorial }) => {
-  if (!memorial) return null; // Handle null case
-  // 1. Referencia al contenedor del grid
+  if (!memorial) return null;
+
   const gridRef = useRef<HTMLDivElement>(null);
-  // Referencia para guardar la instancia de Masonry
-  const masonryInstance = useRef<Masonry | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const masonryInstance = useRef<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const initMasonry = async () => {
-      // 2. Inicializar Masonry solo si la referencia existe
-      if (gridRef.current) {
-        const Masonry = (await import("masonry-layout")).default;
-        masonryInstance.current = new Masonry(gridRef.current, {
-          itemSelector: ".grid-masonry-item", // Clase de tus elementos hijos
-          columnWidth: ".grid-masonry-item", // Usar el ancho del elemento para definir columnas
-          percentPosition: true, // Importante para diseño responsive
-          gutter: 10, // Espacio entre elementos
-          stamp: ".stamp", // Excluir el video del layout
+      if (!gridRef.current) return;
+
+      // Importar las librerías dinámicamente
+      const [{ default: Masonry }, { default: imagesLoaded }] =
+        await Promise.all([import("masonry-layout"), import("imagesloaded")]);
+
+      // Esperar a que todas las imágenes carguen
+      imagesLoaded(gridRef.current, () => {
+        masonryInstance.current = new Masonry(gridRef.current!, {
+          itemSelector: ".grid-masonry-item",
+          columnWidth: ".grid-masonry-item",
+          percentPosition: true,
+          gutter: 10,
+          stamp: ".stamp",
         });
-      }
+        setIsLoading(false);
+      });
     };
 
     initMasonry();
 
-    // // 3. Limpieza: destruir la instancia si el componente se desmonta
-    // return () => {
-    //   if (masonryInstance.current) {
-    //     masonryInstance.current.destroy();
-    //   }
-    // };
-  }, []); // El array vacío asegura que esto corra al montar
+    return () => {
+      if (masonryInstance.current) {
+        masonryInstance.current.destroy();
+      }
+    };
+  }, [memorial.gallery]);
 
   return (
     <>
       <div className="masonry-container mt-10">
         {memorial.gallery && memorial.gallery.length > 0 && (
-          <div ref={gridRef} className="grid relative">
+          <div
+            ref={gridRef}
+            className="grid relative animate-fade-in"
+            style={{
+              transition: "opacity 0.3s ease",
+            }}
+          >
             <HeroVideoDialog
               className="stamp hero-video"
               animationStyle="from-center"
@@ -73,17 +85,14 @@ export const MasonryGallery: React.FC<MasonryProps> = ({ memorial }) => {
               thumbnailAlt="Dummy Video Thumbnail"
             />
             <div className="stamp decoracion"></div>
-            {memorial.gallery.map((image) => (
-              <div
+            {memorial.gallery.map((image, index) => (
+              <MasonryImage
                 key={image.id}
-                className="overflow-hidden rounded-lg grid-masonry-item"
-              >
-                <img
-                  src={image.url}
-                  alt={image.caption || "Memorial Image"}
-                  className="h-full w-full object-cover transition-transform duration-300 hover:scale-105 "
-                />
-              </div>
+                src={image.url}
+                alt={image.caption || "Memorial Image"}
+                index={index}
+                isReady={!isLoading}
+              />
             ))}
           </div>
         )}
