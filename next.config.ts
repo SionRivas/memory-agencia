@@ -10,6 +10,7 @@ const nextConfig: NextConfig = {
     "@libsql/client",
     "@prisma/adapter-libsql",
     "libsql",
+    "@prisma/client",
   ],
   images: {
     remotePatterns: [
