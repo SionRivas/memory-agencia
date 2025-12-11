@@ -6,6 +6,9 @@ import UserAvatar from "@/components/UserAvatar";
 import { prisma } from "@/lib/prisma";
 import { SessionProvider } from "next-auth/react";
 
+// Forzar renderizado dinámico para siempre obtener datos frescos
+export const dynamic = "force-dynamic";
+
 export default async function AdminPage() {
   const RecuerdosServer = await prisma.memorial.findMany({
     orderBy: {
