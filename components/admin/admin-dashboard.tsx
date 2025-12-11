@@ -31,6 +31,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { QRModal } from "./qr-modal";
+import { RecuerdoEditor } from "./recuerdo-editor";
 
 export interface Recuerdo {
   title: string;
@@ -96,18 +97,18 @@ export function AdminDashboard({ recuerdosServer }: AdminDashboardProps) {
     setTimeout(() => setCopiedSlug(null), 2000);
   };
 
-  // if (isEditorOpen) {
-  //   return (
-  //     <RecuerdoEditor
-  //       recuerdo={editingRecuerdo}
-  //       onSave={handleSave}
-  //       onCancel={() => {
-  //         setIsEditorOpen(false)
-  //         setEditingRecuerdo(null)
-  //       }}
-  //     />
-  //   )
-  // }
+  if (isEditorOpen) {
+    return (
+      <RecuerdoEditor
+        recuerdo={editingRecuerdo}
+        onSave={handleSave}
+        onCancel={() => {
+          setIsEditorOpen(false);
+          setEditingRecuerdo(null);
+        }}
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -116,12 +117,12 @@ export function AdminDashboard({ recuerdosServer }: AdminDashboardProps) {
         <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between">
             <h1 className="text-2xl font-semibold text-foreground">
-              Panel de Administración
+              Administración
             </h1>
             <div className="flex items-center gap-4">
               <Button onClick={handleCreateNew} className="gap-2">
                 <Plus className="h-4 w-4" />
-                Crear Nuevo Recuerdo
+                <span className="hidden sm:block">Crear Nuevo Recuerdo</span>
               </Button>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
