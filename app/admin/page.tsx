@@ -27,7 +27,6 @@ export default async function AdminPage() {
   return (
     <>
       <SessionProvider>
-        <UploadForm />
         <AdminDashboard recuerdosServer={RecuerdosWithPhotos} />
       </SessionProvider>
     </>

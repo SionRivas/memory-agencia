@@ -133,9 +133,7 @@ export function AdminDashboard({ recuerdosServer }: AdminDashboardProps) {
                   </Avatar>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem
-                    onClick={() => signOut({ redirectTo: "/" })}
-                  >
+                  <DropdownMenuItem onClick={() => signOut()}>
                     Cerrar Sesión
                   </DropdownMenuItem>
                 </DropdownMenuContent>
