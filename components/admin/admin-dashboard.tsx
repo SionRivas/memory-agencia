@@ -12,6 +12,8 @@ import {
   Trash2,
   Copy,
   Check,
+  Loader2,
+  AlertTriangle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,6 +32,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { QRModal } from "./qr-modal";
 import { RecuerdoEditor } from "./recuerdo-editor";
 
@@ -56,6 +66,10 @@ export function AdminDashboard({ recuerdosServer }: AdminDashboardProps) {
   const [qrRecuerdo, setQrRecuerdo] = useState<Recuerdo | null>(null);
   const [copiedSlug, setCopiedSlug] = useState<string | null>(null);
 
+  // Estado para el dialog de confirmación de eliminación
+  const [deleteRecuerdo, setDeleteRecuerdo] = useState<Recuerdo | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
   const filteredRecuerdos = recuerdos.filter(
     (r) =>
       r.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -72,18 +86,57 @@ export function AdminDashboard({ recuerdosServer }: AdminDashboardProps) {
     setIsEditorOpen(true);
   };
 
-  const handleDelete = (id: string) => {
-    setRecuerdos(recuerdos.filter((r) => r.id !== id));
+  const handleDelete = async () => {
+    if (!deleteRecuerdo) return;
+
+    setIsDeleting(true);
+
+    try {
+      const response = await fetch(`/api/memorials/${deleteRecuerdo.id}`, {
+        method: "DELETE",
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Error eliminando el recuerdo");
+      }
+
+      // Eliminar fotos de S3
+      if (data.deletedImageUrls && data.deletedImageUrls.length > 0) {
+        for (const url of data.deletedImageUrls) {
+          try {
+            const key = url.split("s3.amazonaws.com/").pop();
+            if (key) {
+              await fetch(`/api/upload/${encodeURIComponent(key)}`, {
+                method: "DELETE",
+              });
+            }
+          } catch {
+            console.warn("Error eliminando imagen de S3:", url);
+          }
+        }
+      }
+
+      // Actualizar estado local
+      setRecuerdos(recuerdos.filter((r) => r.id !== deleteRecuerdo.id));
+      setDeleteRecuerdo(null);
+    } catch (error) {
+      console.error("Error:", error);
+      alert(
+        error instanceof Error ? error.message : "Error eliminando el recuerdo"
+      );
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   const handleSave = (recuerdo: Recuerdo) => {
+    // El recuerdo ya viene guardado del servidor, solo actualizamos el estado local
     if (editingRecuerdo) {
       setRecuerdos(recuerdos.map((r) => (r.id === recuerdo.id ? recuerdo : r)));
     } else {
-      setRecuerdos([
-        ...recuerdos,
-        { ...recuerdo, id: Date.now().toString(), createdAt: new Date() },
-      ]);
+      setRecuerdos([recuerdo, ...recuerdos]);
     }
     setIsEditorOpen(false);
     setEditingRecuerdo(null);
@@ -255,7 +308,7 @@ export function AdminDashboard({ recuerdosServer }: AdminDashboardProps) {
                             Generar/Descargar QR
                           </DropdownMenuItem>
                           <DropdownMenuItem
-                            onClick={() => handleDelete(recuerdo.id)}
+                            onClick={() => setDeleteRecuerdo(recuerdo)}
                             className="text-destructive focus:text-destructive"
                           >
                             <Trash2 className="mr-2 h-4 w-4" />
@@ -276,6 +329,62 @@ export function AdminDashboard({ recuerdosServer }: AdminDashboardProps) {
       {qrRecuerdo && (
         <QRModal recuerdo={qrRecuerdo} onClose={() => setQrRecuerdo(null)} />
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog
+        open={!!deleteRecuerdo}
+        onOpenChange={(open) => !open && setDeleteRecuerdo(null)}
+      >
+        <DialogContent showCloseButton={false}>
+          <DialogHeader>
+            <div className="flex items-center gap-3">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10">
+                <AlertTriangle className="h-6 w-6 text-destructive" />
+              </div>
+              <div>
+                <DialogTitle>Eliminar Recuerdo</DialogTitle>
+                <DialogDescription className="mt-1">
+                  Esta acción no se puede deshacer.
+                </DialogDescription>
+              </div>
+            </div>
+          </DialogHeader>
+
+          <div className="py-4">
+            <p className="text-sm text-muted-foreground">
+              ¿Estás seguro de que quieres eliminar el recuerdo{" "}
+              <span className="font-semibold text-foreground">
+                “{deleteRecuerdo?.title}”
+              </span>
+              ? Todas las fotos asociadas también serán eliminadas.
+            </p>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setDeleteRecuerdo(null)}
+              disabled={isDeleting}
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDelete}
+              disabled={isDeleting}
+            >
+              {isDeleting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin-clockwise animate-iteration-count-infinite" />
+                  Eliminando...
+                </>
+              ) : (
+                "Eliminar"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
